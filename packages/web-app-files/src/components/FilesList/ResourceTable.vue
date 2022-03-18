@@ -177,6 +177,13 @@ import { defineComponent, PropType } from '@vue/composition-api'
 import { Resource } from '../../helpers/resource'
 import { ShareTypes } from '../../helpers/share'
 
+const mapResourceFields = (resource: Resource, mapping = {}) => {
+  return Object.keys(mapping).reduce((result, resourceKey) => {
+    result[mapping[resourceKey]] = resource[resourceKey]
+    return result
+  }, {})
+}
+
 export default defineComponent({
   mixins: [Rename],
   model: {
@@ -249,6 +256,33 @@ export default defineComponent({
       type: Object,
       required: false,
       default: null
+    },
+    /**
+     * Maps resource values to route params. Use `{ resourceFieldName: 'routeParamName' }` as format.
+     *
+     * An example would be `{ id: 'fileId' }` to map the value of the `id` field of a resource
+     * to the `fileId` param of the target route.
+     *
+     * Defaults to `{ storageId: 'storageId' } to map the value of the `storageId` field of a resource
+     * to the `storageId` param of the target route.
+     */
+    targetRouteParamMapping: {
+      type: Object,
+      required: false,
+      default: () => ({ storageId: 'storageId' })
+    },
+    /**
+     * Maps resource values to route query options. Use `{ resourceFieldName: 'routeQueryName' }` as format.
+     *
+     * An example would be `{ id: 'fileId' }` to map the value of the `id` field of a resource
+     * to the `fileId` query option of the target route.
+     *
+     * Defaults to an empty object because no query options are expected as default.
+     */
+    targetRouteQueryMapping: {
+      type: Object,
+      required: false,
+      default: () => ({})
     },
     /**
      * Asserts whether clicking on the resource name triggers any action
@@ -534,23 +568,28 @@ export default defineComponent({
       this.openWithPanel('sharing-item')
     },
     folderLink(file) {
-      return this.createFolderLink(file.path, file.storageId)
+      return this.createFolderLink(file.path, file)
     },
     parentFolderLink(file) {
-      return this.createFolderLink(path.dirname(file.path), file.storageId)
+      return this.createFolderLink(path.dirname(file.path), file)
     },
-    createFolderLink(path, storageId) {
+    createFolderLink(path, file) {
       if (this.targetRoute === null) {
         return {}
       }
+      const params = {
+        item: path.replace(/^\//, ''),
+        ...this.targetRoute.params,
+        ...mapResourceFields(file, this.targetRouteParamMapping)
+      }
+      const query = {
+        ...this.targetRoute.query,
+        ...mapResourceFields(file, this.targetRouteQueryMapping)
+      }
       return {
         name: this.targetRoute.name,
-        query: this.targetRoute.query,
-        params: {
-          item: path.replace(/^\//, ''),
-          ...this.targetRoute.params,
-          ...(storageId && { storageId })
-        }
+        params,
+        query
       }
     },
     fileDragged(file) {
