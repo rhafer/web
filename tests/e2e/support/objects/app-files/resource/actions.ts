@@ -168,6 +168,8 @@ export const selectResources = async (args: selectResourcesArgs): Promise<void> 
       if (!(await resourceCheckbox.isChecked())) {
         await resourceCheckbox.check()
       }
+    } else {
+      throw new Error(`The resource ${resource} you are trying to select does not exist`)
     }
   }
 }
