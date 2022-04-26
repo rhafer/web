@@ -19,10 +19,13 @@
         mode="click"
       >
         <oc-list class="roleDropdownList">
-          <li v-for="(descriptor, i) in availableRoleOptions" :key="`role-dropdown-${i}`">
+          <li
+            v-for="roleOption in availableRoleOptions"
+            :key="`role-dropdown-${roleOption.label.toLowerCase()}`"
+          >
             <oc-button
-              :id="`files-role-${descriptor.label.toLowerCase()}`"
-              :class="{ selected: parseInt(link.permissions) === descriptor.role.bitmask(false) }"
+              :id="`files-role-${roleOption.label.toLowerCase()}`"
+              :class="{ selected: parseInt(link.permissions) === roleOption.role.bitmask(false) }"
               appearance="raw"
               justify-content="space-between"
               class="oc-py-xs oc-px-s"
@@ -30,7 +33,7 @@
                 updateLink({
                   link: {
                     ...link,
-                    permissions: descriptor.role.bitmask(false)
+                    permissions: roleOption.role.bitmask(false)
                   },
                   dropRef: $refs.editPublicLinkRoleDropdown
                 })
@@ -39,12 +42,12 @@
               <span>
                 <span
                   class="oc-text-bold oc-display-block oc-width-1-1"
-                  v-text="descriptor.label"
+                  v-text="roleOption.label"
                 />
-                <span>{{ descriptor.role.description() }}</span>
+                <span>{{ roleOption.role.description() }}</span>
               </span>
               <oc-icon
-                v-if="parseInt(link.permissions) === descriptor.role.bitmask(false)"
+                v-if="parseInt(link.permissions) === roleOption.role.bitmask(false)"
                 name="check"
               />
             </oc-button>
@@ -137,10 +140,10 @@
 
 <script>
 import { basename } from 'path'
+import { DateTime } from 'luxon'
 import { mapActions } from 'vuex'
 import Mixins from '../../../../mixins'
 import { createLocationSpaces, isLocationSpacesActive } from '../../../../router'
-import { DateTime } from 'luxon'
 import { LinkShareRoles, SharePermissions } from '../../../../helpers/share'
 
 export default {
@@ -153,7 +156,7 @@ export default {
     },
     expirationDate: {
       type: Object,
-      default: () => {},
+      default: () => ({}),
       required: true
     },
     isFolderShare: {
@@ -219,7 +222,7 @@ export default {
         result.push({
           id: 'edit-expiration',
           title: this.$gettext('Edit expiration date'),
-          method: () => this.updateLink(),
+          method: this.updateLink,
           showDatepicker: true
         })
         if (!this.expirationDate.enforced) {
@@ -239,7 +242,7 @@ export default {
         result.push({
           id: 'add-expiration',
           title: this.$gettext('Add expiration date'),
-          method: () => this.updateLink(),
+          method: this.updateLink,
           showDatepicker: true
         })
       }
@@ -335,8 +338,8 @@ export default {
     },
 
     passwordEnforcedForRole() {
-      const currentRole = this.availableRoleOptions.find((role) => {
-        return parseInt(this.link.permissions) === role.role.bitmask(false)
+      const currentRole = this.availableRoleOptions.find(({ role }) => {
+        return parseInt(this.link.permissions) === role.bitmask(false)
       })
 
       const canRead = currentRole.role.hasPermission(SharePermissions.read)

@@ -89,11 +89,11 @@
       </div>
       <hr class="divider" />
       <div class="oc-mb">
-        <oc-button id="oc-files-file-link-cancel" :disabled="saving" @click="closeForm">
+        <oc-button id="oc-files-file-link-cancel" :disabled="isSaving" @click="closeForm">
           <translate>Cancel</translate>
         </oc-button>
         <oc-button
-          v-if="saving"
+          v-if="isSaving"
           id="oc-files-file-link-saving"
           variation="primary"
           appearance="filled"
@@ -153,8 +153,7 @@ export default {
   data() {
     return {
       errors: false,
-      saving: false,
-      valid: true,
+      isSaving: false,
       link: {
         name: this.defaultLinkName,
         role: this.availableRoleOptions[0],
@@ -186,8 +185,8 @@ export default {
     },
 
     passwordEnforcedForRole() {
-      const currentRole = this.availableRoleOptions.find((role) => {
-        return this.link.role.label === role.role.label
+      const currentRole = this.availableRoleOptions.find(({ role }) => {
+        return this.link.role.label === role.label
       })
 
       const canRead = currentRole.role.hasPermission(SharePermissions.read)
@@ -206,8 +205,8 @@ export default {
     },
 
     isValid() {
+      // passwordEnforcedForRole seems not reactive & doesn't deactivate "save" btn
       const passwordValid = !(this.passwordEnforcedForRole && !this.link.password)
-      // needs to check expiration date min/max!
       const expireDateValid = !(this.expirationDate.enforced && !this.link.expiration)
 
       return passwordValid && expireDateValid
@@ -227,7 +226,7 @@ export default {
   },
   methods: {
     createLink() {
-      this.saving = true
+      this.isSaving = true
       this.$emit('createPublicLink', {
         link: {
           ...this.link,
@@ -235,7 +234,7 @@ export default {
         },
         showError: (e) => {
           this.error = e
-          this.saving = false
+          this.isSaving = false
         }
       })
     },
