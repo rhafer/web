@@ -138,6 +138,7 @@ import { DavProperties, DavProperty } from 'web-pkg/src/constants'
 import FileDrop from './Upload/FileDrop.vue'
 import FileUpload from './Upload/FileUpload.vue'
 import FolderUpload from './Upload/FolderUpload.vue'
+import { SHARE_JAIL_ID } from '../../services/folder'
 
 export default {
   components: {
@@ -152,6 +153,7 @@ export default {
       isPublicLocation: useActiveLocation(isLocationPublicActive, 'files-public-files'),
       isSpacesProjectsLocation: useActiveLocation(isLocationSpacesActive, 'files-spaces-projects'),
       isSpacesProjectLocation: useActiveLocation(isLocationSpacesActive, 'files-spaces-project'),
+      isSpacesShareLocation: useActiveLocation(isLocationSpacesActive, 'files-spaces-share'),
       ...useAppDefaults({
         applicationName: 'files'
       })
@@ -402,6 +404,13 @@ export default {
           path = buildWebDavSpacesPath(this.$route.params.storageId, path)
           await this.$client.files.createFolder(path)
           resource = await this.$client.files.fileInfo(path, DavProperties.Default)
+        } else if (this.isSpacesShareLocation) {
+          path = buildWebDavSpacesPath(
+            [SHARE_JAIL_ID, this.$route.query.resourceId].join('!'),
+            path
+          )
+          await this.$client.files.createFolder(path)
+          resource = await this.$client.files.fileInfo(path, DavProperties.Default)
         } else {
           await this.$client.publicFiles.createFolder(path, null, this.publicLinkPassword)
           resource = await this.$client.publicFiles.getFileInfo(
@@ -491,6 +500,13 @@ export default {
           path = buildWebDavSpacesPath(this.$route.params.storageId, path)
           await this.$client.files.putFileContents(path, '')
           resource = await this.$client.files.fileInfo(path, DavProperties.Default)
+        } else if (this.isSpacesShareLocation) {
+          path = buildWebDavSpacesPath(
+            [SHARE_JAIL_ID, this.$route.query.resourceId].join('!'),
+            path
+          )
+          await this.$client.files.putFileContents(path, '')
+          resource = await this.$client.files.fileInfo(path, DavProperties.Default)
         } else {
           await this.$client.publicFiles.putFileContents('', path, this.publicLinkPassword, '')
           resource = await this.$client.publicFiles.getFileInfo(
@@ -562,6 +578,12 @@ export default {
           resource = await this.$client.files.fileInfo(path, DavProperties.Default)
         } else if (this.isSpacesProjectLocation) {
           path = buildWebDavSpacesPath(this.$route.params.storageId, path)
+          resource = await this.$client.files.fileInfo(path, DavProperties.Default)
+        } else if (this.isSpacesShareLocation) {
+          path = buildWebDavSpacesPath(
+            [SHARE_JAIL_ID, this.$route.query.resourceId].join('!'),
+            path
+          )
           resource = await this.$client.files.fileInfo(path, DavProperties.Default)
         } else {
           resource = await this.$client.publicFiles.getFileInfo(
